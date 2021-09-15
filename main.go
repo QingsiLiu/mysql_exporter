@@ -7,11 +7,27 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 	"log"
+	"mysql_exporter/auth"
 	"mysql_exporter/collectors"
+	"mysql_exporter/config"
 	"net/http"
 )
 
+func initConfig() *config.ExporterConfig {
+
+	// 配置文件解析
+	return &config.ExporterConfig{
+		Web: &config.WebConfig{
+			Addr: ":9999",
+			Auth: &config.AuthConfig{"lhq", "123"},
+		},
+	}
+}
+
 func main() {
+
+	config := initConfig()
+
 	addr := ":9999"
 	mysqlAddr := "localhost:3306"
 	dsn := "root:root@tcp(localhost:3306)/mysql?charset=utf8mb4&loc=PRC&parseTime=true"
@@ -54,8 +70,8 @@ func main() {
 	}))*/
 
 	// 注册控制器
-	http.Handle("/metrics", promhttp.Handler())
+
+	http.Handle("/metrics", auth.BasicAuth(config.Web.Auth, promhttp.Handler()))
 	// 启动web服务
 	http.ListenAndServe(addr, nil)
-
 }
